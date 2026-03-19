@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Examen Inteligente</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .card {
+      background: rgba(255,255,255,0.1);
+      padding: 30px;
+      border-radius: 20px;
+      width: 420px;
+      backdrop-filter: blur(10px);
+    }
+    button {
+      margin-top: 15px;
+      padding: 10px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+      border-radius: 10px;
+      border: none;
+    }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <h2>Evaluación Matemática</h2>
+  <div id="content"></div>
+</div>
+
+<script>
+let student = {};
+let startTime;
+let responses = [];
+let score = 0;
+let current = "q1";
+
+// 🔥 ESTRUCTURA: impar fija / par adaptativa
+const questions = {
+  // 1 fija
+  q1: { text: "2(4*6)-4(3*2)+12-20", correct: "16", next: "q2" },
+
+  // 2 depende
+  q2_good: { text: "5 + 7", correct: "12", next: "q3" },
+  q2_bad: { text: "1 + 3", correct: "4", next: "q3" },
+
+  // 3 fija
+  q3: { text: "6 × 6", correct: "36", next: "q4" },
+
+  // 4 depende
+  q4_good: { text: "12 × 8", correct: "96", next: "q5" },
+  q4_bad: { text: "4 × 5", correct: "20", next: "q5" },
+
+  // 5 fija
+  q5: { text: "9²", correct: "81", next: "q6" },
+
+  // 6 depende
+  q6_good: { text: "15 × 4", correct: "60", next: "q7" },
+  q6_bad: { text: "3 × 4", correct: "12", next: "q7" },
+
+  // 7 fija
+  q7: { text: "20 + 30", correct: "50", next: "q8" },
+
+  // 8 depende
+  q8_good: { text: "100 ÷ 5", correct: "20", next: "q9" },
+  q8_bad: { text: "10 ÷ 2", correct: "5", next: "q9" },
+
+  // 9 fija
+  q9: { text: "7 × 8", correct: "56", next: "q10" },
+
+  // 10 depende
+  q10_good: { text: "144 ÷ 12", correct: "12", next: "q11" },
+  q10_bad: { text: "20 ÷ 4", correct: "5", next: "q11" },
+
+  // continúa mismo patrón hasta 20...
+  q11: { text: "11 + 9", correct: "20", next: "q12" },
+  q12_good: { text: "18 × 2", correct: "36", next: "q13" },
+  q12_bad: { text: "2 × 6", correct: "12", next: "q13" },
+  q13: { text: "30 + 15", correct: "45", next: "q14" },
+  q14_good: { text: "200 ÷ 4", correct: "50", next: "q15" },
+  q14_bad: { text: "8 ÷ 2", correct: "4", next: "q15" },
+  q15: { text: "10 × 10", correct: "100", next: "q16" },
+  q16_good: { text: "81 ÷ 9", correct: "9", next: "q17" },
+  q16_bad: { text: "9 ÷ 3", correct: "3", next: "q17" },
+  q17: { text: "14 + 6", correct: "20", next: "q18" },
+  q18_good: { text: "50 × 2", correct: "100", next: "q19" },
+  q18_bad: { text: "5 × 2", correct: "10", next: "q19" },
+  q19: { text: "16 × 2", correct: "32", next: "q20" },
+  q20: { text: "25 × 4", correct: "100", next: null }
+};
+
+function renderStart() {
+  document.getElementById("content").innerHTML = `
+    <input placeholder="Nombre" id="name">
+    <input placeholder="Grado" id="grade">
+    <input placeholder="Institución" id="school">
+    <button onclick="startExam()">Comenzar</button>
+  `;
+}
+
+function startExam() {
+  student.name = document.getElementById("name").value;
+  student.grade = document.getElementById("grade").value;
+  student.school = document.getElementById("school").value;
+  showQuestion("q1");
+}
+
+function showQuestion(id) {
+  current = id;
+  startTime = Date.now();
+  let q = questions[id];
+
+  document.getElementById("content").innerHTML = `
+    <h3>${q.text}</h3>
+    <input id="answer">
+    <button onclick="submitAnswer()">Responder</button>
+  `;
+}
+
+function submitAnswer() {
+  let q = questions[current];
+  let answer = document.getElementById("answer").value;
+  let time = (Date.now() - startTime) / 1000;
+  let correct = answer == q.correct;
+
+  if (correct) score++;
+
+  responses.push({ question: q.text, answer, correct, time });
+
+  let next;
+
+  if (current.includes("q2") || current.includes("q4") || current.includes("q6") || current.includes("q8") || current.includes("q10") || current.includes("q12") || current.includes("q14") || current.includes("q16") || current.includes("q18")) {
+    next = q.next;
+  } else if (questions[q.next + "_good"]) {
+    next = correct ? q.next + "_good" : q.next + "_bad";
+  } else {
+    next = q.next;
+  }
+
+  if (next) showQuestion(next);
+  else finishExam();
+}
+
+function finishExam() {
+  document.getElementById("content").innerHTML = `<h3>Puntaje: ${score}/${responses.length}</h3><p id="ia"></p>`;
+
+  const prompt = `Eres un profesor. Evalúa:
+  Puntaje: ${score}/${responses.length}
+  Respuestas: ${JSON.stringify(responses)}
+  Da diagnóstico breve.`;
+
+  fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Authorization": "Bearer TU_API_KEY",
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      model: "gpt-4o-mini",
+      messages: [{ role: "user", content: prompt }]
+    })
+  })
+  .then(res => res.json())
+  .then(data => {
+    document.getElementById("ia").innerText = data.choices[0].message.content;
+  });
+}
+
+renderStart();
+</script>
+
+</body>
+</html>
+
